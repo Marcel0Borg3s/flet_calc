@@ -1,6 +1,10 @@
+import ctypes
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(1)  # Evita scaling automático
+except:
+    pass
 import flet as ft
 from flet import colors
-from rich.jupyter import display
 
 botoes = [
     {'operador': 'AC', 'fonte': colors.BLACK, 'fundo': colors.BLUE_GREY_100},
@@ -33,6 +37,49 @@ def main(page: ft.Page):
 
     result = ft.Text(value="0", color=colors.WHITE, size=40)
 
+    nova_operacao = False  # Variável de controle no escopo de main()
+
+    def select(e):
+        nonlocal nova_operacao
+
+        value = e.control.content.value
+        value_at = result.value if result.value != '0' else ''
+
+        # Inicia nova operação após o "=" se um número for pressionado
+        if nova_operacao and (value.isdigit() or value == '.'):
+            result.value = value
+            nova_operacao = False
+        elif value == 'AC':
+            result.value = '0'
+            nova_operacao = False
+        elif value == '+-':
+            try:
+                if result.value.startswith('-'):
+                    result.value = result.value[1:]
+                else:
+                    result.value = '-' + result.value
+            except Exception:
+                result.value = '0'
+            nova_operacao = False
+        elif value == '=':
+            try:
+                expression = result.value.replace('%', '/100')
+                result.value = str(eval(expression))
+            except Exception:
+                result.value = 'Error'
+            nova_operacao = True  # Próxima entrada começará nova expressão
+        elif value.isdigit() or value == '.':
+            result.value = (value_at + value) if result.value != '0' else value
+            nova_operacao = False
+        else:  # operador
+            if not value_at or value_at[-1] in '+-*/%':
+                result.value = value_at[:-1] + value
+            else:
+                result.value = value_at + value
+            nova_operacao = False
+
+        page.update()
+
     display = ft.Row(
         width=250,
         controls=[result],
@@ -46,6 +93,7 @@ def main(page: ft.Page):
         bgcolor=btn['fundo'],
         border_radius=100,
         alignment=ft.alignment.center,
+        on_click=select
         ) for btn in botoes]
 
     keyboard = ft.Row(
