@@ -5,6 +5,7 @@ except:
     pass
 import flet as ft
 from flet import colors
+import decimal as dec
 
 botoes = [
     {'operador': 'AC', 'fonte': colors.BLACK, 'fundo': colors.BLUE_GREY_100},
@@ -32,7 +33,7 @@ def main(page: ft.Page):
     page.window_resizable = False
     page.window_width = 250
     page.window_height = 380
-    page.title = "Calculadora"
+    page.title = "MB_Calc"
     page.window_always_on_top = True
 
     result = ft.Text(value="0", color=colors.WHITE, size=40)
@@ -64,10 +65,12 @@ def main(page: ft.Page):
         elif value == '=':
             try:
                 expression = result.value.replace('%', '/100')
-                result.value = str(eval(expression))
+                resultado = eval(expression)
+                resultado_decimal = dec.Decimal(str(resultado)).quantize(dec.Decimal('1.00000'))  # até 5 casas
+                result.value = str(resultado_decimal).rstrip('0').rstrip('.')  # remove zeros/trailing ponto
             except Exception:
                 result.value = 'Error'
-            nova_operacao = True  # Próxima entrada começará nova expressão
+            nova_operacao = True
         elif value.isdigit() or value == '.':
             result.value = (value_at + value) if result.value != '0' else value
             nova_operacao = False
